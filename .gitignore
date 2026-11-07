@@ -14,3 +14,5 @@ platform/dbt_shared/logs/
 *.tfvars
 !*.tfvars.example
 .env
+.user.yml
+.local/

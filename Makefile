@@ -1,4 +1,5 @@
 .PHONY: setup lint test demo teardown
+export DUCKDB_PATH ?= $(CURDIR)/.local/dev.duckdb
 DBT = cd platform/dbt_shared && uv run dbt
 DBT_FLAGS = --profiles-dir . --project-dir .
 
@@ -14,11 +15,13 @@ lint:  ## ruff + sqlfluff
 
 test:  ## pytest + dbt tests on DuckDB
 	uv run pytest
+	@mkdir -p .local
 	$(DBT) build $(DBT_FLAGS) --target dev
 
 demo:  ## Local-only demo on DuckDB (no AWS). Projects hook in here later.
+	@mkdir -p .local
 	$(DBT) build $(DBT_FLAGS) --target dev
 	@echo "Demo: dbt smoke build OK. Project demos are added as p4/p5/p9 land."
 
 teardown:  ## Remove local artifacts. Never touches AWS (see platform/terraform).
-	rm -rf platform/dbt_shared/target platform/dbt_shared/logs platform/dbt_shared/*.duckdb* .pytest_cache .ruff_cache
+	rm -rf .local platform/dbt_shared/target platform/dbt_shared/logs .pytest_cache .ruff_cache
