@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: smoke_check
+    description: Toolchain smoke test for the cross-db macros.
+    columns:
+      - name: days_elapsed
+        data_tests:
+          - not_null
+      - name: project_name
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["portfolio"]

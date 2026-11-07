@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+*.duckdb
+*.duckdb.wal
+platform/dbt_shared/target/
+platform/dbt_shared/dbt_packages/
+platform/dbt_shared/logs/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.env

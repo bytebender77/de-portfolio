@@ -1,0 +1,20 @@
+# Lives next to dbt_project.yml; run dbt with --profiles-dir . (the Makefile does).
+# No secrets here: the cloud target reads everything from environment variables.
+dbt_shared:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'dev.duckdb') }}"
+      threads: 4
+
+    # STUB: not exercised in CI or by `make demo`. Needs `uv sync --extra cloud`
+    # and the Terraform outputs from phase 2.
+    cloud:
+      type: athena
+      region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+      s3_staging_dir: "{{ env_var('ATHENA_STAGING_DIR', 's3://CHANGE-ME/athena-results/') }}"
+      database: "{{ env_var('GLUE_DATABASE', 'portfolio') }}"
+      schema: "{{ env_var('GLUE_DATABASE', 'portfolio') }}"
+      work_group: "{{ env_var('ATHENA_WORKGROUP', 'portfolio') }}"
+      threads: 4

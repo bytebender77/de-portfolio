@@ -1,0 +1,14 @@
+name: dbt_shared
+version: "0.1.0"
+config-version: 2
+profile: dbt_shared
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  dbt_shared:
+    +materialized: view

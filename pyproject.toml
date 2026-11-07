@@ -1,0 +1,38 @@
+[project]
+name = "de-portfolio"
+version = "0.1.0"
+description = "Data-engineering portfolio monorepo"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "dbt-core>=1.9,<2",
+    "dbt-duckdb>=1.9,<2",
+]
+
+[project.optional-dependencies]
+# Cloud target stub. Not installed by `make setup`; opt in with `uv sync --extra cloud`.
+cloud = ["dbt-athena>=1.9,<2"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8",
+    "sqlfluff>=3.2",
+    "pre-commit>=3.8",
+    "sqlfluff-templater-dbt>=4.5.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["platform/dbt_shared/target", "platform/dbt_shared/dbt_packages"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "p4_recon", "p5_delivery", "p9_abtk"]
+addopts = "-ra --strict-markers"
