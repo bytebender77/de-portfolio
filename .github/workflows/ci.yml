@@ -1,0 +1,77 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run sqlfluff lint platform/dbt_shared/models
+
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest
+
+  dbt:
+    runs-on: ubuntu-latest
+    env:
+      DUCKDB_PATH: ${{ github.workspace }}/.local/ci.duckdb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed to diff against the base branch
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Build changed models on DuckDB
+        working-directory: platform/dbt_shared
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.local"
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          # Macro, config or first-push changes can affect every model: build all.
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null \
+             || git diff --name-only "$BASE" HEAD -- . | grep -qE '(macros/|dbt_project.yml|profiles.yml|seeds/)'; then
+            SELECT=""
+          else
+            CHANGED=$(git diff --name-only "$BASE" HEAD -- models \
+              | grep -E '\.sql$' | xargs -r -n1 basename | sed 's/\.sql$//' | sed 's/$/+/' | tr '\n' ' ')
+            if [ -z "$CHANGED" ]; then echo "No model changes; skipping dbt build."; exit 0; fi
+            SELECT="--select $CHANGED"
+          fi
+          uv run dbt build --profiles-dir . --project-dir . --target dev $SELECT
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - working-directory: platform/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
